@@ -1,14 +1,27 @@
-import con from "./connection.js";
+import mysql from 'mysql2/promise';
 
-export async function SalvarFilme(filme) {
-    let comando = `
-    INSERT INTO tb_filme(nm_filme,ds_sinopse,vl_avaliacao, dt_lancamento,bt_disponivel)
-	    VALUES(?,?,?,?,?);
-    `
 
-    let resposta = await con.query(comando, [filme.nome,filme.sinopse,filme.avaliacao,filme.lancamento,filme.disponivel])
-    let info = resposta[0]; // as informações sempre estarão na resposta 0 desse vetor
+let con = await mysql.createConnection({
+    host: process.env.MYSQL_HOST,
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PWD,
+    database: process.env.MYSQL_DB,
+    typeCast: function (field, next) {
+      
+      if (field.type === 'TINY' && field.length === 1) {
+          return (field.string() === '1'); 
+      }
+      else if (field.type.includes('DECIMAL')) {
+        return Number(field.string());
+      }
+      else {
+          return next();
+      }
+      
+    }
+})
 
-    let idFilme = info.insertId; // filtra o ID do filme
-    return idFilme;
-}
+
+console.log('--> Conexão com BD realizada');
+
+export default con;
